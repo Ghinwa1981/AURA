@@ -183,11 +183,11 @@ AURA uses a four-level threat classification:
 ## Developer
 
 **Developed for:** Paper Airplanes — AI Course / Graduation Project 2026
-**Student:** Ghinwa Allaoui & Riam Abbass
+**Student:** Ghinwa Allaoui & Riam Abbas
 **Tutor:** Mulham Fetna
 **Mentor:** Hala Dagher
 **Technologies:** YOLOv8 · FastAPI · SQLite · OpenCV · Groq LLM
-**Github:** Ghinwa1981
----
+**Github:** Ghinwa1981 Riam24
+
 
 *AURA — Neural Threat Mitigation: ACTIVE*
