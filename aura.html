@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AURA — Neural Intelligence Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Bebas+Neue&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:      #05070F;
+  --bg1:     #090C18;
+  --bg2:     #0E1220;
+  --bg3:     #141928;
+  --bg4:     #1A2035;
+  --border:  rgba(99,130,255,0.1);
+  --border2: rgba(99,130,255,0.2);
+  --blue:    #6382FF;
+  --blue2:   #4B6BF5;
+  --cyan:    #00E5FF;
+  --green:   #00E676;
+  --yellow:  #FFD740;
+  --orange:  #FF9100;
+  --red:     #FF1744;
+  --purple:  #D500F9;
+  --text1:   #EEF0FF;
+  --text2:   #7B85A8;
+  --text3:   #3A4060;
+  --safe:    #00E676;
+  --warn:    #FFD740;
+  --danger:  #FF1744;
+  --crit:    #D500F9;
+  --font:    'Space Grotesk', sans-serif;
+  --mono:    'JetBrains Mono', monospace;
+  --display: 'Bebas Neue', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--bg);color:var(--text1);font-family:var(--font);min-height:100vh;overflow-x:hidden;}
+
+/* ═══ SCANLINES OVERLAY ═════════════════════ */
+body::before{
+  content:'';position:fixed;inset:0;z-index:9998;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.03) 3px,rgba(0,0,0,0.03) 4px);
+}
+
+/* ═══ AUTH SCREEN ═══════════════════════════ */
+#auth-screen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.auth-bg{
+  position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 50%,rgba(99,130,255,0.07),transparent),
+    radial-gradient(ellipse 40% 60% at 80% 30%,rgba(0,229,255,0.05),transparent);
+}
+.auth-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:40px 40px;
+  mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 40%,transparent 100%);
+}
+.auth-box{
+  position:relative;z-index:2;width:420px;
+  background:var(--bg1);border:1px solid var(--border2);border-radius:16px;
+  padding:40px;box-shadow:0 0 60px rgba(99,130,255,0.08);
+}
+.auth-logo{
+  font-family:var(--display);font-size:42px;letter-spacing:4px;
+  color:var(--text1);text-align:center;margin-bottom:4px;
+}
+.auth-logo span{color:var(--blue);}
+.auth-tagline{
+  font-family:var(--mono);font-size:10px;color:var(--text3);
+  text-align:center;letter-spacing:3px;margin-bottom:32px;text-transform:uppercase;
+}
+.auth-tabs{display:flex;gap:0;margin-bottom:28px;border:1px solid var(--border2);border-radius:8px;overflow:hidden;}
+.auth-tab{
+  flex:1;padding:10px;text-align:center;cursor:pointer;
+  font-family:var(--mono);font-size:11px;letter-spacing:1px;color:var(--text2);
+  transition:all 0.2s;background:transparent;border:none;
+}
+.auth-tab.active{background:var(--blue2);color:white;}
+
+.field{margin-bottom:16px;}
+.field label{display:block;font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:1px;margin-bottom:6px;}
+.field input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;padding:11px 14px;color:var(--text1);
+  font-family:var(--font);font-size:14px;outline:none;transition:border-color 0.2s;
+}
+.field input:focus{border-color:var(--blue);}
+.field input::placeholder{color:var(--text3);}
+
+.auth-btn{
+  width:100%;padding:13px;background:var(--blue2);color:white;border:none;
+  border-radius:8px;font-family:var(--display);font-size:18px;letter-spacing:2px;
+  cursor:pointer;transition:all 0.2s;margin-top:8px;
+}
+.auth-btn:hover{background:var(--blue);transform:translateY(-1px);}
+.auth-err{
+  background:rgba(255,23,68,0.1);border:1px solid rgba(255,23,68,0.3);
+  border-radius:8px;padding:10px 14px;font-size:13px;color:#FF5C7A;
+  margin-top:12px;display:none;
+}
+.auth-err.show{display:block;}
+.auth-demo{
+  text-align:center;margin-top:16px;font-size:12px;color:var(--text3);
+  font-family:var(--mono);
+}
+.auth-demo span{color:var(--blue);cursor:pointer;}
+.auth-demo span:hover{color:var(--cyan);}
+
+/* ═══ MAIN APP ══════════════════════════════ */
+#app{display:none;grid-template-rows:54px 1fr;grid-template-columns:220px 1fr 280px;height:100vh;overflow:hidden;}
+#app.active{display:grid;}
+
+/* HEADER */
+.d-header{
+  grid-column:1/-1;background:var(--bg1);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:14px;padding:0 18px;
+}
+.d-logo{font-family:var(--display);font-size:20px;letter-spacing:4px;color:var(--text1);}
+.d-logo span{color:var(--blue);}
+.d-version{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:2px;padding:3px 8px;border:1px solid var(--border);border-radius:4px;}
+.hfill{flex:1;}
+.hstat{text-align:center;padding:0 12px;border-left:1px solid var(--border);}
+.hstat .v{font-family:var(--mono);font-size:14px;font-weight:500;}
+.hstat .l{font-size:9px;color:var(--text3);letter-spacing:1px;margin-top:1px;}
+.user-pill{
+  display:flex;align-items:center;gap:8px;padding:6px 12px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:20px;cursor:pointer;
+}
+.user-avatar{
+  width:26px;height:26px;border-radius:50%;background:var(--blue2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;color:white;
+}
+.user-name{font-size:13px;font-weight:500;}
+.user-role{font-family:var(--mono);font-size:9px;color:var(--text3);}
+.logout-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;padding:4px;}
+.logout-btn:hover{color:var(--red);}
+.api-pill{display:flex;align-items:center;gap:6px;padding:4px 12px;border:1px solid var(--border);border-radius:20px;font-family:var(--mono);font-size:10px;color:var(--text2);}
+.adot{width:6px;height:6px;border-radius:50%;background:var(--text3);transition:all 0.3s;}
+.adot.on{background:var(--green);box-shadow:0 0 8px var(--green);}
+
+/* SIDEBAR */
+.d-nav{background:var(--bg1);border-right:1px solid var(--border);padding:14px 10px;display:flex;flex-direction:column;gap:3px;overflow-y:auto;}
+.nav-sec{font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:2px;padding:10px 8px 5px;text-transform:uppercase;}
+.nav-it{
+  padding:9px 10px;border-radius:8px;cursor:pointer;
+  display:flex;align-items:center;gap:9px;font-size:13px;color:var(--text2);
+  transition:all 0.15s;border:1px solid transparent;
+}
+.nav-it:hover{background:var(--bg3);color:var(--text1);}
+.nav-it.active{background:var(--bg4);color:var(--text1);border-color:var(--border2);}
+.nav-it .ni{font-size:14px;width:18px;text-align:center;}
+.nav-badge{margin-left:auto;font-family:var(--mono);font-size:9px;background:rgba(99,130,255,0.15);color:var(--blue);padding:2px 7px;border-radius:4px;}
+.nav-badge.red{background:rgba(255,23,68,0.15);color:var(--red);}
+.nav-badge.green{background:rgba(0,230,118,0.15);color:var(--green);}
+
+/* MAIN */
+.d-main{background:var(--bg);overflow-y:auto;padding:18px;}
+.d-main::-webkit-scrollbar{width:4px;}
+.d-main::-webkit-scrollbar-thumb{background:var(--bg4);}
+
+/* ASIDE */
+.d-aside{background:var(--bg1);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+.aside-h{padding:13px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.aside-t{font-family:var(--mono);font-size:10px;color:var(--text2);letter-spacing:2px;}
+.aside-c{font-family:var(--mono);font-size:10px;color:var(--text3);}
+#log-scroll{flex:1;overflow-y:auto;padding:8px;}
+#log-scroll::-webkit-scrollbar{width:3px;}
+#log-scroll::-webkit-scrollbar-thumb{background:var(--bg4);}
+
+/* CARDS */
+.card{background:var(--bg1);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:14px;}
+.card-h{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-t{font-family:var(--mono);font-size:9px;color:var(--blue);letter-spacing:2px;text-transform:uppercase;}
+.card-b{padding:16px;}
+
+/* STATS */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px;}
+.stat-card{background:var(--bg1);border:1px solid var(--border);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--sc,var(--blue));}
+.stat-v{font-family:var(--mono);font-size:26px;font-weight:500;line-height:1;color:var(--sc,var(--blue));}
+.stat-l{font-size:12px;color:var(--text2);margin-top:5px;}
+.stat-s{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* CHARTS */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+
+/* DROP ZONE */
+.drop-zone{
+  border:2px dashed var(--border2);border-radius:10px;padding:28px;
+  text-align:center;cursor:pointer;position:relative;transition:all 0.2s;
+}
+.drop-zone:hover,.drop-zone.over{border-color:var(--blue);background:rgba(99,130,255,0.04);}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.dz-ico{font-size:28px;color:var(--text3);margin-bottom:8px;}
+.dz-t{font-family:var(--display);font-size:16px;letter-spacing:1px;color:var(--text2);}
+.dz-s{font-size:12px;color:var(--text3);margin-top:4px;}
+
+/* INPUTS */
+.inp{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 13px;color:var(--text1);font-family:var(--font);font-size:13px;outline:none;transition:border-color 0.2s;}
+.inp:focus{border-color:var(--blue);}
+.inp::placeholder{color:var(--text3);}
+textarea.inp{width:100%;min-height:110px;resize:vertical;line-height:1.6;}
+
+/* BUTTONS */
+.btn{padding:9px 18px;border-radius:8px;font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:1px;cursor:pointer;transition:all 0.15s;border:none;}
+.btn-p{background:var(--blue2);color:white;}
+.btn-p:hover{background:var(--blue);}
+.btn-p:disabled{opacity:0.3;cursor:not-allowed;}
+.btn-g{background:transparent;color:var(--text2);border:1px solid var(--border2);}
+.btn-g:hover{background:var(--bg3);color:var(--text1);}
+.btn-danger{background:rgba(255,23,68,0.1);color:var(--red);border:1px solid rgba(255,23,68,0.3);}
+.btn-danger:hover{background:rgba(255,23,68,0.2);}
+.btn-full{width:100%;margin-top:10px;padding:11px;font-size:11px;}
+.btn-success{background:rgba(0,230,118,0.1);color:var(--green);border:1px solid rgba(0,230,118,0.3);}
+.btn-success:hover{background:rgba(0,230,118,0.2);}
+
+/* THREAT BANNER */
+.tb{padding:14px 16px;border-radius:10px;display:flex;align-items:flex-start;gap:14px;border-left:3px solid;margin-bottom:14px;}
+.tb.safe    {background:rgba(0,230,118,0.06); border-color:var(--safe);}
+.tb.caution,.tb.warning{background:rgba(255,215,64,0.06); border-color:var(--warn);}
+.tb.danger  {background:rgba(255,23,68,0.06);  border-color:var(--danger);}
+.tb.critical{background:rgba(213,0,249,0.07);  border-color:var(--crit);}
+.tb.clear   {background:rgba(99,130,255,0.06); border-color:var(--blue);}
+.tb-lv{font-family:var(--display);font-size:20px;letter-spacing:2px;white-space:nowrap;padding-top:1px;}
+.tb.safe     .tb-lv{color:var(--safe);}
+.tb.caution  .tb-lv,.tb.warning .tb-lv{color:var(--warn);}
+.tb.danger   .tb-lv{color:var(--danger);}
+.tb.critical .tb-lv{color:var(--crit);}
+.tb.clear    .tb-lv{color:var(--blue);}
+.tb-info{font-size:13px;color:var(--text2);line-height:1.6;}
+.tb-rec{font-size:12px;color:var(--blue);margin-top:4px;font-family:var(--mono);}
+
+/* OBJECTS */
+.obj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:9px;}
+.obj-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:11px 13px;border-left:2px solid;animation:up 0.25s ease both;}
+@keyframes up{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.obj-card.safe    {border-left-color:var(--safe);}
+.obj-card.caution,.obj-card.warning{border-left-color:var(--warn);}
+.obj-card.danger  {border-left-color:var(--danger);}
+.obj-card.critical{border-left-color:var(--crit);}
+.obj-n{font-size:13px;font-weight:600;}
+.obj-tags{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap;}
+.tag{font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid var(--border);}
+.tag-safe    {color:var(--safe);  border-color:rgba(0,230,118,0.3);  background:rgba(0,230,118,0.07);}
+.tag-caution,.tag-warning{color:var(--warn);  border-color:rgba(255,215,64,0.3);  background:rgba(255,215,64,0.07);}
+.tag-danger  {color:var(--danger);border-color:rgba(255,23,68,0.3);   background:rgba(255,23,68,0.07);}
+.tag-critical{color:var(--crit);  border-color:rgba(213,0,249,0.3);  background:rgba(213,0,249,0.08);}
+.obj-note{font-size:10px;color:var(--text3);margin-top:5px;line-height:1.5;}
+
+/* SCORES */
+.sc-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.sc-l{font-family:var(--mono);font-size:10px;color:var(--text2);width:82px;}
+.sc-bar{flex:1;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden;}
+.sc-fill{height:100%;border-radius:2px;transition:width 1s ease;}
+.sc-v{font-family:var(--mono);font-size:10px;color:var(--text2);width:32px;text-align:right;}
+
+/* ENTITIES */
+.ent-wrap{display:flex;flex-wrap:wrap;gap:6px;}
+.etag{font-family:var(--mono);font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);color:var(--text2);background:var(--bg3);}
+.etag.threat  {color:var(--danger);border-color:rgba(255,23,68,0.3);background:rgba(255,23,68,0.06);}
+.etag.person  {color:var(--blue);  border-color:rgba(99,130,255,0.3);background:rgba(99,130,255,0.06);}
+.etag.location{color:var(--warn);  border-color:rgba(255,215,64,0.3);background:rgba(255,215,64,0.06);}
+
+/* BREAKDOWN */
+.bd-item{background:var(--bg2);border:1px solid var(--border);border-left:2px solid;border-radius:8px;padding:10px 12px;margin-bottom:8px;animation:up 0.3s ease both;}
+.bd-item.safe    {border-left-color:var(--safe);}
+.bd-item.warning,.bd-item.caution{border-left-color:var(--warn);}
+.bd-item.danger  {border-left-color:var(--danger);}
+.bd-item.critical{border-left-color:var(--crit);}
+.bd-lv{font-family:var(--mono);font-size:9px;letter-spacing:1px;margin-bottom:3px;}
+.bd-item.safe     .bd-lv{color:var(--safe);}
+.bd-item.warning  .bd-lv,.bd-item.caution .bd-lv{color:var(--warn);}
+.bd-item.danger   .bd-lv{color:var(--danger);}
+.bd-item.critical .bd-lv{color:var(--crit);}
+.bd-tx{font-size:11px;color:var(--text2);line-height:1.5;}
+
+/* TIMELINE */
+.timeline{display:flex;gap:3px;overflow-x:auto;padding:4px 0 8px;}
+.t-seg{width:22px;height:32px;border-radius:3px;flex-shrink:0;cursor:pointer;transition:transform 0.15s;opacity:0.8;}
+.t-seg:hover{transform:scaleY(1.2);opacity:1;}
+.t-seg.safe    {background:var(--safe);}
+.t-seg.warning,.t-seg.caution{background:var(--warn);}
+.t-seg.danger  {background:var(--danger);}
+.t-seg.critical{background:var(--crit);}
+.t-seg.clear   {background:var(--bg4);}
+
+/* CAMERA */
+#camera-feed{width:100%;border-radius:10px;display:block;background:var(--bg3);min-height:300px;object-fit:cover;}
+.cam-overlay{
+  position:relative;display:none;
+}
+.cam-overlay.active{display:block;}
+.cam-status-bar{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;margin-top:10px;
+}
+.cam-threat-badge{
+  font-family:var(--display);font-size:16px;letter-spacing:2px;
+  padding:4px 12px;border-radius:6px;
+}
+.cam-info{font-family:var(--mono);font-size:11px;color:var(--text2);flex:1;}
+.cam-btns{display:flex;gap:8px;}
+
+/* HISTORY */
+.history-item{
+  background:var(--bg2);border:1px solid var(--border);border-left:2px solid;
+  border-radius:8px;padding:12px 14px;margin-bottom:8px;
+  display:flex;align-items:center;gap:12px;transition:all 0.15s;
+}
+.history-item:hover{background:var(--bg3);border-color:var(--border2);}
+.history-item.safe    {border-left-color:var(--safe);}
+.history-item.caution,.history-item.warning{border-left-color:var(--warn);}
+.history-item.danger  {border-left-color:var(--danger);}
+.history-item.critical{border-left-color:var(--crit);}
+.hi-threat{font-family:var(--display);font-size:14px;letter-spacing:1px;width:80px;}
+.history-item.safe     .hi-threat{color:var(--safe);}
+.history-item.caution  .hi-threat,.history-item.warning .hi-threat{color:var(--warn);}
+.history-item.danger   .hi-threat{color:var(--danger);}
+.history-item.critical .hi-threat{color:var(--crit);}
+.hi-type{font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:3px;background:var(--bg4);color:var(--text3);}
+.hi-summary{flex:1;font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hi-time{font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;}
+.hi-pdf{padding:5px 10px;font-size:9px;}
+
+/* LOG */
+.log-e{background:var(--bg2);border:1px solid var(--border);border-left:2px solid;border-radius:7px;padding:9px 11px;margin-bottom:6px;animation:up 0.2s ease;}
+.log-e.safe    {border-left-color:var(--safe);}
+.log-e.caution,.log-e.warning{border-left-color:var(--warn);}
+.log-e.danger  {border-left-color:var(--danger);}
+.log-e.critical{border-left-color:var(--crit);}
+.le-row{display:flex;justify-content:space-between;align-items:center;}
+.le-th{font-family:var(--display);font-size:13px;letter-spacing:1px;}
+.log-e.safe     .le-th{color:var(--safe);}
+.log-e.caution  .le-th,.log-e.warning .le-th{color:var(--warn);}
+.log-e.danger   .le-th{color:var(--danger);}
+.log-e.critical .le-th{color:var(--crit);}
+.le-ti{font-family:var(--mono);font-size:9px;color:var(--text3);}
+.le-ty{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px;}
+.le-pv{font-size:11px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* SPINNER */
+.spin-row{display:none;align-items:center;gap:10px;padding:8px 0;}
+.spin-row.on{display:flex;}
+.spinner{width:16px;height:16px;border:2px solid var(--bg4);border-top-color:var(--blue);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spin-t{font-family:var(--mono);font-size:10px;color:var(--blue);letter-spacing:1px;}
+
+/* PROGRESS */
+.prog-wrap{display:none;margin-top:8px;}
+.prog-wrap.on{display:block;}
+.prog-bar{width:100%;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--blue);border-radius:2px;transition:width 0.5s ease;width:0%;}
+.prog-lbl{font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:4px;}
+
+/* KEY STATUS */
+.key-row{display:flex;gap:8px;margin-bottom:10px;}
+.key-st{font-family:var(--mono);font-size:10px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg3);color:var(--text3);white-space:nowrap;}
+.key-st.ok{color:var(--green);border-color:rgba(0,230,118,0.4);}
+
+/* MISC */
+.hidden{display:none!important;}
+.row{display:flex;align-items:center;gap:8px;}
+.divider{height:1px;background:var(--border);margin:14px 0;}
+.char-c{font-family:var(--mono);font-size:10px;color:var(--text3);text-align:right;margin-top:4px;}
+img#img-preview{width:100%;border-radius:8px;display:block;}
+#img-preview-wrap{position:relative;display:none;margin-bottom:10px;}
+#bbox-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+video#vid-preview{width:100%;border-radius:8px;display:none;margin-bottom:10px;max-height:260px;}
+.empty-s{text-align:center;padding:28px;font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:2px;}
+.section-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     AUTH SCREEN
+═══════════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-bg"></div>
+  <div class="auth-grid"></div>
+  <div class="auth-box">
+    <div class="auth-logo">AU<span>R</span>A</div>
+    <div class="auth-tagline">Neural Intelligence Platform</div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">LOGIN</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">REGISTER</button>
+    </div>
+
+    <!-- Login -->
+    <div id="login-form">
+      <div class="field"><label>USERNAME</label><input type="text" id="l-user" placeholder="Enter username"></div>
+      <div class="field"><label>PASSWORD</label><input type="password" id="l-pass" placeholder="Enter password"></div>
+      <button class="auth-btn" onclick="doLogin()">ACCESS SYSTEM</button>
+    </div>
+
+    <!-- Register -->
+    <div id="register-form" class="hidden">
+      <div class="field"><label>USERNAME</label><input type="text" id="r-user" placeholder="Choose username"></div>
+      <div class="field"><label>EMAIL</label><input type="email" id="r-email" placeholder="your@email.com"></div>
+      <div class="field"><label>FULL NAME</label><input type="text" id="r-name" placeholder="Your full name"></div>
+      <div class="field"><label>PASSWORD</label><input type="password" id="r-pass" placeholder="Choose password"></div>
+      <button class="auth-btn" onclick="doRegister()">CREATE ACCOUNT</button>
+    </div>
+
+    <div class="auth-err" id="auth-err"></div>
+    <div class="auth-demo">
+      Skip auth? <span onclick="skipAuth()">Continue as Guest →</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MAIN APP
+═══════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- HEADER -->
+  <header class="d-header">
+    <div class="d-logo">AU<span>R</span>A</div>
+    <div class="d-version">v2.0</div>
+    <div class="hfill"></div>
+    <div class="hstat"><div class="v" id="h-total" style="color:var(--blue)">0</div><div class="l">Scans</div></div>
+    <div class="hstat"><div class="v" id="h-threats" style="color:var(--danger)">0</div><div class="l">Threats</div></div>
+    <div class="hstat"><div class="v" id="h-safe" style="color:var(--safe)">0</div><div class="l">Safe</div></div>
+    <div class="hstat"><div class="v" id="h-warn" style="color:var(--warn)">0</div><div class="l">Warnings</div></div>
+    <div class="api-pill"><div class="adot" id="api-dot"></div><span id="api-lbl">Connecting...</span></div>
+    <div class="user-pill" id="user-pill">
+      <div class="user-avatar" id="user-av">G</div>
+      <div><div class="user-name" id="user-nm">Guest</div><div class="user-role" id="user-rl">viewer</div></div>
+      <button class="logout-btn" onclick="doLogout()" title="Logout">×</button>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav class="d-nav">
+    <div class="nav-sec">Main</div>
+    <div class="nav-it active" onclick="showPage('dashboard')" id="nav-dashboard"><div class="ni">◈</div>Dashboard</div>
+    <div class="nav-it" onclick="showPage('scan')" id="nav-scan"><div class="ni">⬡</div>New Scan<div class="nav-badge">AUTO</div></div>
+    <div class="nav-sec">Intelligence</div>
+    <div class="nav-it" onclick="showPage('image')" id="nav-image"><div class="ni">▣</div>Image Analysis</div>
+    <div class="nav-it" onclick="showPage('text')" id="nav-text"><div class="ni">≡</div>Text Analysis</div>
+    <div class="nav-it" onclick="showPage('video')" id="nav-video"><div class="ni">▶</div>Video Analysis</div>
+    <div class="nav-it" onclick="showPage('camera')" id="nav-camera"><div class="ni">◉</div>Live Camera<div class="nav-badge green" id="cam-badge">OFF</div></div>
+    <div class="nav-sec">Data</div>
+    <div class="nav-it" onclick="showPage('history')" id="nav-history"><div class="ni">☰</div>Scan History</div>
+    <div class="nav-it" onclick="showPage('settings')" id="nav-settings"><div class="ni">⚙</div>Settings</div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="d-main" id="d-main">
+
+    <!-- ── DASHBOARD ── -->
+    <div id="page-dashboard">
+      <div class="stat-grid">
+        <div class="stat-card" style="--sc:var(--blue)"><div class="stat-v" id="d-total">0</div><div class="stat-l">Total Scans</div><div class="stat-s">All time</div></div>
+        <div class="stat-card" style="--sc:var(--danger)"><div class="stat-v" id="d-threats">0</div><div class="stat-l">Threats</div><div class="stat-s">DANGER + CRITICAL</div></div>
+        <div class="stat-card" style="--sc:var(--safe)"><div class="stat-v" id="d-safe">0</div><div class="stat-l">Safe</div><div class="stat-s">No threat found</div></div>
+        <div class="stat-card" style="--sc:var(--warn)"><div class="stat-v" id="d-rate">0%</div><div class="stat-l">Threat Rate</div><div class="stat-s">Threats / total</div></div>
+      </div>
+      <div class="charts-row">
+        <div class="card"><div class="card-h"><span class="card-t">Threat Distribution</span></div><div class="card-b" style="height:200px;position:relative"><canvas id="chart-pie"></canvas></div></div>
+        <div class="card"><div class="card-h"><span class="card-t">Scan Timeline</span></div><div class="card-b" style="height:200px;position:relative"><canvas id="chart-line"></canvas></div></div>
+      </div>
+      <div class="section-2col">
+        <div class="card"><div class="card-h"><span class="card-t">Top Detected Objects</span></div><div class="card-b" id="d-top-objects"><div class="empty-s">No data yet</div></div></div>
+        <div class="card"><div class="card-h"><span class="card-t">Recent Activity</span></div><div class="card-b" id="d-recent"><div class="empty-s">No scans yet</div></div></div>
+      </div>
+    </div>
+
+    <!-- ── AUTO SCAN ── -->
+    <div id="page-scan" class="hidden">
+      <div class="card">
+        <div class="card-h"><span class="card-t">Auto-Detect Input</span><span style="font-family:var(--mono);font-size:9px;color:var(--blue)" id="auto-mode-lbl">AUTO</span></div>
+        <div class="card-b">
+          <div class="drop-zone" id="auto-drop">
+            <div class="dz-ico">⬡</div>
+            <div class="dz-t">Drop image or video here</div>
+            <div class="dz-s">Or type text below — AURA detects automatically</div>
+            <input type="file" id="auto-file" accept="image/*,video/*">
+          </div>
+          <div id="auto-img-wrap" class="hidden" style="margin-top:10px"><img id="auto-img-prev" style="width:100%;border-radius:8px"></div>
+          <video id="auto-vid-prev" controls style="width:100%;border-radius:8px;display:none;margin-top:10px;max-height:240px"></video>
+          <div style="margin-top:10px">
+            <textarea class="inp" id="auto-text" placeholder="Or paste any text here for text analysis..." oninput="onAutoText(this.value)"></textarea>
+            <div class="char-c" id="auto-char">0 chars</div>
+          </div>
+          <div class="spin-row" id="auto-spin"><div class="spinner"></div><span class="spin-t" id="auto-spin-t">Analyzing...</span></div>
+          <div class="prog-wrap" id="auto-prog"><div class="prog-bar"><div class="prog-fill" id="auto-prog-fill"></div></div><div class="prog-lbl" id="auto-prog-lbl"></div></div>
+          <button class="btn btn-p btn-full" id="auto-btn" onclick="runAutoScan()" disabled>▶ RUN INTELLIGENCE SCAN</button>
+        </div>
+      </div>
+      <div id="auto-result"></div>
+    </div>
+
+    <!-- ── IMAGE ── -->
+    <div id="page-image" class="hidden">
+      <div class="card">
+        <div class="card-h"><span class="card-t">Image Intelligence</span></div>
+        <div class="card-b">
+          <div id="img-preview-wrap"><img id="img-preview" src="" alt=""><canvas id="bbox-canvas"></canvas></div>
+          <div class="drop-zone" id="img-drop"><div class="dz-ico">▣</div><div class="dz-t">Drop image</div><div class="dz-s">PNG / JPG / WEBP</div><input type="file" id="img-file" accept="image/*"></div>
+          <div class="spin-row" id="img-spin"><div class="spinner"></div><span class="spin-t">YOLOv8 scanning...</span></div>
+          <button class="btn btn-p btn-full" id="img-btn" onclick="runImageScan()" disabled>Analyze Image</button>
+        </div>
+      </div>
+      <div id="img-result"></div>
+    </div>
+
+    <!-- ── TEXT ── -->
+    <div id="page-text" class="hidden">
+      <div class="card">
+        <div class="card-h"><span class="card-t">Text Intelligence</span></div>
+        <div class="card-b">
+          <div class="key-row">
+            <input class="inp" type="password" id="txt-key" placeholder="Groq API Key (gsk_...)" oninput="validateKey()" style="flex:1">
+            <div class="key-st" id="txt-key-st">Not set</div>
+          </div>
+          <textarea class="inp" id="txt-input" placeholder="Paste any text in any language..." oninput="document.getElementById('txt-char').textContent=this.value.length+' chars'"></textarea>
+          <div class="char-c" id="txt-char">0 chars</div>
+          <div class="spin-row" id="txt-spin"><div class="spinner"></div><span class="spin-t">Groq LLM scanning...</span></div>
+          <button class="btn btn-p btn-full" id="txt-btn" onclick="runTextScan()" disabled>Analyze Text</button>
+        </div>
+      </div>
+      <div id="txt-result"></div>
+    </div>
+
+    <!-- ── VIDEO ── -->
+    <div id="page-video" class="hidden">
+      <div class="card">
+        <div class="card-h"><span class="card-t">Video Intelligence</span></div>
+        <div class="card-b">
+          <video id="vid-preview" controls></video>
+          <div class="drop-zone" id="vid-drop"><div class="dz-ico">▶</div><div class="dz-t">Drop video</div><div class="dz-s">MP4 / AVI / MOV</div><input type="file" id="vid-file" accept="video/*"></div>
+          <div class="spin-row" id="vid-spin"><div class="spinner"></div><span class="spin-t">Analyzing frames...</span></div>
+          <div class="prog-wrap" id="vid-prog"><div class="prog-bar"><div class="prog-fill" id="vid-prog-fill"></div></div><div class="prog-lbl" id="vid-prog-lbl"></div></div>
+          <button class="btn btn-p btn-full" id="vid-btn" onclick="runVideoScan()" disabled>Analyze Video</button>
+        </div>
+      </div>
+      <div id="vid-result"></div>
+    </div>
+
+    <!-- ── CAMERA ── -->
+    <div id="page-camera" class="hidden">
+      <div class="card">
+        <div class="card-h">
+          <span class="card-t">Live Camera Feed</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-success" id="cam-start-btn" onclick="startCamera()">▶ Start Camera</button>
+            <button class="btn btn-danger" id="cam-stop-btn" onclick="stopCamera()" style="display:none">■ Stop</button>
+          </div>
+        </div>
+        <div class="card-b">
+          <div class="cam-overlay" id="cam-wrap">
+            <img id="camera-feed" src="" alt="Camera feed">
+            <div class="cam-status-bar">
+              <div class="cam-threat-badge" id="cam-threat-badge" style="color:var(--blue);background:rgba(99,130,255,0.1)">STANDBY</div>
+              <div class="cam-info" id="cam-info">Camera not started</div>
+              <div style="font-family:var(--mono);font-size:10px;color:var(--text3)" id="cam-fps">0 FPS</div>
+            </div>
+          </div>
+          <div id="cam-placeholder" style="text-align:center;padding:60px;color:var(--text3);font-family:var(--mono);font-size:11px;letter-spacing:2px">
+            CAMERA OFFLINE — PRESS START TO ACTIVATE
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── HISTORY ── -->
+    <div id="page-history" class="hidden">
+      <div class="card">
+        <div class="card-h">
+          <span class="card-t">Scan History</span>
+          <button class="btn btn-g" onclick="loadHistory()" style="font-size:9px;padding:5px 12px">↻ Refresh</button>
+        </div>
+        <div class="card-b" id="history-list"><div class="empty-s">Loading...</div></div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div id="page-settings" class="hidden">
+      <div class="card">
+        <div class="card-h"><span class="card-t">API Configuration</span></div>
+        <div class="card-b">
+          <div style="margin-bottom:14px">
+            <div style="font-size:12px;color:var(--text2);margin-bottom:6px">Groq API Key (Text Analysis)</div>
+            <div class="key-row">
+              <input class="inp" type="password" id="s-groq" placeholder="gsk_..." style="flex:1" oninput="syncGroqKey()">
+              <div class="key-st" id="s-groq-st">Not set</div>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:5px">Get free key at console.groq.com</div>
+          </div>
+          <div class="divider"></div>
+          <div>
+            <div style="font-size:12px;color:var(--text2);margin-bottom:6px">AURA Backend URL</div>
+            <div class="row">
+              <input class="inp" id="s-api" style="flex:1">
+              <button class="btn btn-g" onclick="checkAPI()">Test</button>
+            </div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:5px">Default: http://localhost:19090</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ASIDE LOG -->
+  <aside class="d-aside">
+    <div class="aside-h">
+      <span class="aside-t">Intelligence Log</span>
+      <span class="aside-c" id="log-count">0 entries</span>
+    </div>
+    <div id="log-scroll"><div class="empty-s">No entries yet</div></div>
+  </aside>
+
+</div><!-- /app -->
+
+<script>
+// ══ CONFIG ══════════════════════════════════════
+const CFG = {
+  apiBase: 'http://localhost:19090',
+  groqKey: '',
+  token: null,
+  user: null,
+  autoMode: null,
+  camInterval: null,
+  camActive: false,
+  camFrameCount: 0,
+  camLastTime: Date.now()
+};
+
+const STATS = { total:0, threats:0, safe:0, warn:0, dist:{SAFE:0,WARNING:0,CAUTION:0,DANGER:0,CRITICAL:0} };
+
+// ══ AUTH ════════════════════════════════════════
+function switchAuthTab(t) {
+  document.querySelectorAll('.auth-tab').forEach((el,i) => el.classList.toggle('active', (i===0&&t==='login')||(i===1&&t==='register')));
+  document.getElementById('login-form').classList.toggle('hidden', t!=='login');
+  document.getElementById('register-form').classList.toggle('hidden', t!=='register');
+  document.getElementById('auth-err').classList.remove('show');
+}
+
+async function doLogin() {
+  const u = document.getElementById('l-user').value.trim();
+  const p = document.getElementById('l-pass').value.trim();
+  if (!u||!p) return showAuthErr('Please fill all fields');
+  try {
+    const r = await fetch(CFG.apiBase+'/api/auth/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:u, password:p})
+    });
+    const d = await r.json();
+    if (!r.ok) return showAuthErr(d.detail||'Login failed');
+    CFG.token = d.token; CFG.user = d.user;
+    launchApp();
+  } catch { showAuthErr('Cannot connect to server. Try Guest mode.'); }
+}
+
+async function doRegister() {
+  const u = document.getElementById('r-user').value.trim();
+  const e = document.getElementById('r-email').value.trim();
+  const n = document.getElementById('r-name').value.trim();
+  const p = document.getElementById('r-pass').value.trim();
+  if (!u||!e||!p) return showAuthErr('Please fill all required fields');
+  try {
+    const r = await fetch(CFG.apiBase+'/api/auth/register', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:u, email:e, full_name:n, password:p})
+    });
+    const d = await r.json();
+    if (!r.ok) return showAuthErr(d.detail||'Registration failed');
+    CFG.token = d.token; CFG.user = d.user;
+    launchApp();
+  } catch { showAuthErr('Cannot connect to server. Try Guest mode.'); }
+}
+
+function skipAuth() {
+  CFG.user = {username:'Guest', role:'viewer', id:null};
+  launchApp();
+}
+
+function showAuthErr(msg) {
+  const el = document.getElementById('auth-err');
+  el.textContent = msg; el.classList.add('show');
+}
+
+function doLogout() {
+  CFG.token=null; CFG.user=null;
+  stopCamera();
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('auth-screen').style.display='flex';
+}
+
+function launchApp() {
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').classList.add('active');
+  // Set user info
+  const u = CFG.user;
+  document.getElementById('user-av').textContent = (u.username||'G')[0].toUpperCase();
+  document.getElementById('user-nm').textContent  = u.full_name || u.username;
+  document.getElementById('user-rl').textContent  = u.role || 'guest';
+  document.getElementById('s-api').value = CFG.apiBase;
+  initCharts(); checkAPI(); setInterval(checkAPI, 12000);
+  setupDropZones(); loadStats();
+}
+
+// ══ API ══════════════════════════════════════════
+function authHeaders() {
+  const h = {'Content-Type':'application/json'};
+  if (CFG.token) h['Authorization'] = 'Bearer ' + CFG.token;
+  return h;
+}
+
+async function checkAPI() {
+  try {
+    const r = await fetch(CFG.apiBase+'/api/status', {signal:AbortSignal.timeout(2000)});
+    if (r.ok) {
+      document.getElementById('api-dot').className='adot on';
+      document.getElementById('api-lbl').textContent='Online';
+    } else throw 0;
+  } catch {
+    document.getElementById('api-dot').className='adot';
+    document.getElementById('api-lbl').textContent='Offline';
+  }
+}
+
+// ══ CHARTS ═══════════════════════════════════════
+let pieChart, lineChart;
+function initCharts() {
+  if (pieChart) return;
+  pieChart = new Chart(document.getElementById('chart-pie'), {
+    type:'doughnut',
+    data:{labels:['Safe','Warning','Danger','Critical'],datasets:[{data:[0,0,0,0],backgroundColor:['rgba(0,230,118,0.7)','rgba(255,215,64,0.7)','rgba(255,23,68,0.7)','rgba(213,0,249,0.7)'],borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#7B85A8',font:{size:11,family:'JetBrains Mono'},padding:10,boxWidth:10}}}}
+  });
+  lineChart = new Chart(document.getElementById('chart-line'), {
+    type:'line',
+    data:{labels:[],datasets:[{label:'Safe',data:[],borderColor:'rgba(0,230,118,0.8)',backgroundColor:'rgba(0,230,118,0.07)',fill:true,tension:0.4,pointRadius:3,borderWidth:1.5},{label:'Threats',data:[],borderColor:'rgba(255,23,68,0.8)',backgroundColor:'rgba(255,23,68,0.07)',fill:true,tension:0.4,pointRadius:3,borderWidth:1.5}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#3A4060',font:{size:9,family:'JetBrains Mono'}}},y:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#3A4060',font:{size:9,family:'JetBrains Mono'}},beginAtZero:true}},plugins:{legend:{labels:{color:'#7B85A8',font:{size:10,family:'JetBrains Mono'},boxWidth:10}}}}
+  });
+}
+
+function updateStats(threat) {
+  STATS.total++;
+  const t = (threat||'SAFE').toUpperCase();
+  if (t==='DANGER'||t==='CRITICAL') STATS.threats++;
+  else if (t==='WARNING'||t==='CAUTION') STATS.warn++;
+  else STATS.safe++;
+  if (STATS.dist[t]!==undefined) STATS.dist[t]++;
+  document.getElementById('h-total').textContent   = STATS.total;
+  document.getElementById('h-threats').textContent = STATS.threats;
+  document.getElementById('h-safe').textContent    = STATS.safe;
+  document.getElementById('h-warn').textContent    = STATS.warn;
+  document.getElementById('d-total').textContent   = STATS.total;
+  document.getElementById('d-threats').textContent = STATS.threats;
+  document.getElementById('d-safe').textContent    = STATS.safe;
+  document.getElementById('d-rate').textContent    = STATS.total?Math.round(STATS.threats/STATS.total*100)+'%':'0%';
+  pieChart.data.datasets[0].data=[STATS.dist.SAFE,STATS.dist.WARNING+STATS.dist.CAUTION,STATS.dist.DANGER,STATS.dist.CRITICAL];
+  pieChart.update();
+  const now=new Date().toLocaleTimeString('en',{hour12:false,hour:'2-digit',minute:'2-digit'});
+  const lb=lineChart.data.labels;
+  if(lb.length>10){lb.shift();lineChart.data.datasets[0].data.shift();lineChart.data.datasets[1].data.shift();}
+  lb.push(now);
+  const isTh=(t==='DANGER'||t==='CRITICAL')?1:0;
+  lineChart.data.datasets[0].data.push(isTh?0:1);
+  lineChart.data.datasets[1].data.push(isTh?1:0);
+  lineChart.update();
+}
+
+async function loadStats() {
+  try {
+    const r = await fetch(CFG.apiBase+'/api/stats');
+    if (!r.ok) return;
+    const d = await r.json();
+    // Update top objects
+    if (d.topObjects?.length) {
+      const el = document.getElementById('d-top-objects');
+      el.innerHTML = d.topObjects.slice(0,6).map(o =>
+        `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+          <span style="font-size:12px;font-weight:500;flex:1">${o.label}</span>
+          <div style="flex:2;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden">
+            <div style="height:100%;background:var(--blue);width:${Math.min(100,o.count*10)}%;border-radius:2px"></div>
+          </div>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--text3);width:20px;text-align:right">${o.count}</span>
+        </div>`
+      ).join('');
+    }
+  } catch {}
+}
+
+// ══ NAV ══════════════════════════════════════════
+function showPage(n) {
+  document.querySelectorAll('[id^="page-"]').forEach(p=>p.classList.add('hidden'));
+  document.querySelectorAll('.nav-it').forEach(i=>i.classList.remove('active'));
+  document.getElementById('page-'+n).classList.remove('hidden');
+  document.getElementById('nav-'+n)?.classList.add('active');
+  if (n==='history') loadHistory();
+  if (n==='settings') document.getElementById('s-api').value=CFG.apiBase;
+}
+
+// ══ DROP ZONES ════════════════════════════════════
+function setupDropZones() {
+  const dz=(zId,fId,cb)=>{
+    const z=document.getElementById(zId);
+    z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('over');});
+    z.addEventListener('dragleave',()=>z.classList.remove('over'));
+    z.addEventListener('drop',e=>{e.preventDefault();z.classList.remove('over');if(e.dataTransfer.files[0])cb(e.dataTransfer.files[0]);});
+    document.getElementById(fId).addEventListener('change',e=>{if(e.target.files[0])cb(e.target.files[0]);});
+  };
+  dz('auto-drop','auto-file',loadAutoFile);
+  dz('img-drop','img-file',loadImgFile);
+  dz('vid-drop','vid-file',loadVidFile);
+}
+
+// ══ AUTO SCAN ════════════════════════════════════
+function onAutoText(v) {
+  document.getElementById('auto-char').textContent=v.length+' chars';
+  if(v.trim()){CFG.autoMode='text';document.getElementById('auto-mode-lbl').textContent='TEXT';document.getElementById('auto-btn').disabled=!(CFG.groqKey.startsWith('gsk_')&&CFG.groqKey.length>20);}
+}
+function loadAutoFile(f){
+  if(!f) return;
+  if(f.type.startsWith('image/')){
+    CFG.autoMode='image';CFG._autoFile=f;
+    document.getElementById('auto-img-prev').src=URL.createObjectURL(f);
+    document.getElementById('auto-img-wrap').classList.remove('hidden');
+    document.getElementById('auto-drop').style.display='none';
+    document.getElementById('auto-mode-lbl').textContent='IMAGE';
+    document.getElementById('auto-btn').disabled=false;
+  } else if(f.type.startsWith('video/')){
+    CFG.autoMode='video';CFG._autoFile=f;
+    const v=document.getElementById('auto-vid-prev');v.src=URL.createObjectURL(f);v.style.display='block';
+    document.getElementById('auto-drop').style.display='none';
+    document.getElementById('auto-mode-lbl').textContent='VIDEO';
+    document.getElementById('auto-btn').disabled=false;
+  }
+}
+async function runAutoScan() {
+  if(!CFG.autoMode) return;
+  if(CFG.autoMode==='image') await runImageScanWith(CFG._autoFile,'auto-result','auto-spin');
+  else if(CFG.autoMode==='video') await runVideoScanWith(CFG._autoFile,'auto-result','auto-spin','auto-prog','auto-prog-fill','auto-prog-lbl');
+  else await runTextScanWith(document.getElementById('auto-text').value.trim(),CFG.groqKey,'auto-result','auto-spin');
+}
+
+// ══ IMAGE ════════════════════════════════════════
+function loadImgFile(f){
+  if(!f||!f.type.startsWith('image/')) return;
+  CFG._imgFile=f;
+  const img=document.getElementById('img-preview');
+  img.src=URL.createObjectURL(f);
+  document.getElementById('img-preview-wrap').style.display='block';
+  document.getElementById('img-drop').style.display='none';
+  document.getElementById('img-btn').disabled=false;
+  img.onload=()=>{const c=document.getElementById('bbox-canvas');c.width=img.offsetWidth;c.height=img.offsetHeight;};
+}
+async function runImageScan(){await runImageScanWith(CFG._imgFile,'img-result','img-spin');}
+async function runImageScanWith(file,rId,sId){
+  if(!file) return;
+  document.getElementById(sId).classList.add('on');
+  document.getElementById(rId).innerHTML='';
+  let report;
+  try{
+    const ab=await file.arrayBuffer();
+    const h={'Content-Type':file.type};
+    if(CFG.token) h['Authorization']='Bearer '+CFG.token;
+    const r=await fetch(CFG.apiBase+'/api/analyze',{method:'POST',headers:h,body:ab,signal:AbortSignal.timeout(20000)});
+    if(!r.ok) throw 0;
+    report=await r.json();
+  } catch { report=demoImgReport(); }
+  document.getElementById(sId).classList.remove('on');
+  renderImgResult(report,rId);
+  addLog('IMAGE',report.overallThreat,report.summary);
+  updateStats(report.overallThreat);
+  updateRecent('IMAGE',report.overallThreat,report.summary);
+}
+
+function renderImgResult(r,tId){
+  const tc=(r.overallThreat||'SAFE').toLowerCase();
+  let h=`<div class="tb ${tc}"><div class="tb-lv">${r.overallThreat}</div><div><div class="tb-info">${r.summary}</div><div class="tb-rec">→ ${r.recommendation}</div></div></div>`;
+  if(r.objects?.length){
+    h+=`<div class="card"><div class="card-h"><span class="card-t">Detected Objects</span><span style="font-family:var(--mono);font-size:9px;color:var(--text3)">${r.processingTimeMs}ms</span></div><div class="card-b"><div class="obj-grid">`;
+    r.objects.forEach((o,i)=>{
+      const ot=(o.threat||'safe').toLowerCase();
+      h+=`<div class="obj-card ${ot}" style="animation-delay:${i*0.04}s">
+        <div class="obj-n">${o.label}</div>
+        <div class="obj-tags"><span class="tag tag-${ot}">${o.threat}</span><span class="tag">${Math.round((o.confidence||0)*100)}%</span><span class="tag">${o.category||''}</span></div>
+        <div class="obj-note">${o.rationale||''}</div>
+      </div>`;
+    });
+    h+=`</div></div></div>`;
+  }
+  document.getElementById(tId).innerHTML=h;
+  if(r.objects) drawBoxes(r.objects);
+}
+
+function drawBoxes(objects){
+  const c=document.getElementById('bbox-canvas'),img=document.getElementById('img-preview');
+  if(!img||!c) return;
+  c.width=img.offsetWidth;c.height=img.offsetHeight;
+  const sx=img.offsetWidth/(img.naturalWidth||img.offsetWidth),sy=img.offsetHeight/(img.naturalHeight||img.offsetHeight);
+  const ctx=c.getContext('2d');
+  const cols={SAFE:'#00E676',WARNING:'#FFD740',CAUTION:'#FFD740',DANGER:'#FF1744',CRITICAL:'#D500F9'};
+  objects.forEach(o=>{
+    if(!o.bbox) return;
+    const col=cols[o.threat]||'#6382FF';
+    const x=o.bbox.x*sx,y=o.bbox.y*sy,w=o.bbox.w*sx,h=o.bbox.h*sy;
+    ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.strokeRect(x,y,w,h);
+    const cs=8;[[x,y,cs,0,0,cs],[x+w,y,-cs,0,0,cs],[x,y+h,cs,0,0,-cs],[x+w,y+h,-cs,0,0,-cs]].forEach(([px,py,d1,d2,d3,d4])=>{ctx.beginPath();ctx.moveTo(px+d1,py+d2);ctx.lineTo(px,py);ctx.lineTo(px+d3,py+d4);ctx.stroke();});
+    ctx.fillStyle=col;ctx.font='500 10px JetBrains Mono';
+    const lbl=o.label+' '+Math.round((o.confidence||0)*100)+'%';
+    const tw=ctx.measureText(lbl).width+8;
+    ctx.fillRect(x,y-15,tw,13);ctx.fillStyle='#000';ctx.fillText(lbl,x+4,y-5);
+  });
+}
+
+function demoImgReport(){
+  return{frameId:'DEMO-001',timestamp:new Date().toISOString(),processingTimeMs:87,overallThreat:'DANGER',overallThreatLevel:3,summary:'3 objects — 1 threat(s), 2 safe.',recommendation:'Initiate response protocol.',dangerCount:1,safeCount:2,averageConfidence:0.85,objects:[{label:'person',confidence:0.93,threat:'SAFE',category:'person',priority:1,rationale:"Benign.",bbox:{x:60,y:40,w:120,h:210}},{label:'backpack',confidence:0.74,threat:'CAUTION',category:'cargo',priority:3,rationale:"Requires review.",bbox:{x:180,y:130,w:80,h:90}},{label:'knife',confidence:0.87,threat:'DANGER',category:'weapon',priority:7,rationale:"Threat weapon.",bbox:{x:140,y:160,w:55,h:28}}],faces:[]};
+}
+
+// ══ TEXT ══════════════════════════════════════════
+function validateKey(){
+  const k=document.getElementById('txt-key').value.trim();
+  syncKey(k);
+  document.getElementById('txt-btn').disabled=!(k.startsWith('gsk_')&&k.length>20);
+}
+function syncGroqKey(){
+  const k=document.getElementById('s-groq').value.trim();
+  syncKey(k);
+  const ok=k.startsWith('gsk_')&&k.length>20;
+  document.getElementById('s-groq-st').textContent=ok?'✓ Ready':'Not set';
+  document.getElementById('s-groq-st').className='key-st'+(ok?' ok':'');
+}
+function syncKey(k){
+  CFG.groqKey=k;
+  const ok=k.startsWith('gsk_')&&k.length>20;
+  const st=document.getElementById('txt-key-st');
+  if(st){st.textContent=ok?'✓ Ready':'Not set';st.className='key-st'+(ok?' ok':'');}
+  if(ok&&document.getElementById('auto-text')?.value.trim()) document.getElementById('auto-btn').disabled=false;
+}
+async function runTextScan(){
+  const txt=document.getElementById('txt-input').value.trim();
+  const key=document.getElementById('txt-key').value.trim()||CFG.groqKey;
+  if(!txt||!key) return;
+  await runTextScanWith(txt,key,'txt-result','txt-spin');
+}
+async function runTextScanWith(text,key,rId,sId){
+  document.getElementById(sId).classList.add('on');
+  document.getElementById(rId).innerHTML='';
+  try{
+    const r=await callGroq(text,key);
+    renderTextResult(r,rId);
+    addLog('TEXT',r.threat,r.language+' · '+text.substring(0,40));
+    updateStats(r.threat);
+    updateRecent('TEXT',r.threat,r.summary);
+  }catch(e){alert('Error: '+e.message);}
+  finally{document.getElementById(sId).classList.remove('on');}
+}
+async function callGroq(text,key){
+  const sys=`You are AURA — Corporate Security Intelligence. Return ONLY valid JSON no markdown:
+{"threat":"SAFE or WARNING or DANGER or CRITICAL","language":"English name","summary":"2-3 sentences","scores":{"aggression":0.0,"urgency":0.0,"deception":0.0,"sentiment":0.0},"entities":[{"text":"x","type":"person or location or threat or organization or other"}],"breakdown":[{"level":"SAFE or WARNING or DANGER or CRITICAL","finding":"specific finding"}],"recommendation":"one line"}`;
+  const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'llama-3.3-70b-versatile',temperature:0.1,max_tokens:1000,messages:[{role:'system',content:sys},{role:'user',content:'Analyze:\n\n'+text}]})});
+  if(!res.ok){const e=await res.json();throw new Error(e.error?.message||'Groq error');}
+  const d=await res.json();
+  return JSON.parse(d.choices[0].message.content.trim().replace(/```json|```/g,''));
+}
+function renderTextResult(r,tId){
+  const tc=r.threat.toLowerCase();
+  let h=`<div class="tb ${tc}"><div class="tb-lv">${r.threat}</div><div><div class="tb-info"><strong>${r.language}</strong> · ${r.summary}</div><div class="tb-rec">→ ${r.recommendation}</div></div></div>`;
+  h+=`<div class="card"><div class="card-h"><span class="card-t">Sentiment Analysis</span></div><div class="card-b">`;
+  [{l:'Aggression',v:r.scores.aggression,c:'#FF1744'},{l:'Urgency',v:r.scores.urgency,c:'#FFD740'},{l:'Deception',v:r.scores.deception,c:'#FF9100'},{l:'Sentiment',v:(r.scores.sentiment+1)/2,c:'#00E676'}].forEach(s=>{
+    const p=Math.round(Math.max(0,Math.min(1,s.v))*100);
+    h+=`<div class="sc-row"><div class="sc-l">${s.l}</div><div class="sc-bar"><div class="sc-fill" style="width:${p}%;background:${s.c}"></div></div><div class="sc-v">${p}%</div></div>`;
+  });
+  h+=`</div></div>`;
+  if(r.entities?.length){h+=`<div class="card"><div class="card-h"><span class="card-t">Detected Entities</span></div><div class="card-b"><div class="ent-wrap">`;r.entities.forEach(e=>{const cls=['threat','person','location'].includes(e.type)?e.type:'';h+=`<span class="etag ${cls}">${e.text} <span style="opacity:0.5;font-size:9px">${e.type}</span></span>`;});h+=`</div></div></div>`;}
+  h+=`<div class="card"><div class="card-h"><span class="card-t">Audit Breakdown</span></div><div class="card-b">`;
+  (r.breakdown||[]).forEach((b,i)=>{h+=`<div class="bd-item ${b.level.toLowerCase()}" style="animation-delay:${i*0.05}s"><div class="bd-lv">${b.level}</div><div class="bd-tx">${b.finding}</div></div>`;});
+  h+=`</div></div>`;
+  document.getElementById(tId).innerHTML=h;
+}
+
+// ══ VIDEO ═════════════════════════════════════════
+function loadVidFile(f){if(!f||!f.type.startsWith('video/')) return;CFG._vidFile=f;const vp=document.getElementById('vid-preview');vp.src=URL.createObjectURL(f);vp.style.display='block';document.getElementById('vid-drop').style.display='none';document.getElementById('vid-btn').disabled=false;}
+async function runVideoScan(){await runVideoScanWith(CFG._vidFile,'vid-result','vid-spin','vid-prog','vid-prog-fill','vid-prog-lbl');}
+async function runVideoScanWith(file,rId,sId,pId,pfId,plId){
+  if(!file) return;
+  document.getElementById(sId).classList.add('on');document.getElementById(pId).classList.add('on');document.getElementById(rId).innerHTML='';
+  simProg(pfId,plId);
+  let r;
+  try{
+    const ab=await file.arrayBuffer();
+    const h={'Content-Type':file.type};if(CFG.token) h['Authorization']='Bearer '+CFG.token;
+    const res=await fetch(CFG.apiBase+'/api/video',{method:'POST',headers:h,body:ab});
+    if(!res.ok) throw 0;r=await res.json();
+  }catch{r=demoVideoReport();}
+  document.getElementById(pfId).style.width='100%';document.getElementById(plId).textContent='Complete ✓';
+  setTimeout(()=>document.getElementById(pId).classList.remove('on'),1000);
+  document.getElementById(sId).classList.remove('on');
+  renderVideoResult(r,rId);
+  addLog('VIDEO',r.peakThreat,file.name+' · '+r.analyzedFrames+' frames');
+  updateStats(r.peakThreat);updateRecent('VIDEO',r.peakThreat,file.name);
+}
+function simProg(fId,lId){let p=0;const st=['Uploading...','Extracting frames...','YOLOv8 detection...','Building report...'];const iv=setInterval(()=>{p=Math.min(p+Math.random()*12,88);document.getElementById(fId).style.width=p+'%';document.getElementById(lId).textContent=st[Math.floor(p/25)]||st[3];if(p>=88)clearInterval(iv);},400);}
+function renderVideoResult(r,tId){
+  const pc={SAFE:'var(--safe)',WARNING:'var(--warn)',CAUTION:'var(--warn)',DANGER:'var(--danger)',CRITICAL:'var(--crit)',CLEAR:'var(--blue)'};
+  let h=`<div class="stat-grid"><div class="stat-card" style="--sc:${pc[r.peakThreat]||'var(--blue)'}"><div class="stat-v">${r.peakThreat}</div><div class="stat-l">Peak Threat</div></div><div class="stat-card" style="--sc:var(--blue)"><div class="stat-v">${r.analyzedFrames}</div><div class="stat-l">Frames</div></div><div class="stat-card" style="--sc:var(--danger)"><div class="stat-v">${r.dangerCount}</div><div class="stat-l">Threats</div></div><div class="stat-card" style="--sc:var(--safe)"><div class="stat-v">${r.safeCount}</div><div class="stat-l">Safe</div></div></div>`;
+  const uid='t'+Date.now();
+  h+=`<div class="card"><div class="card-h"><span class="card-t">Threat Timeline</span><span style="font-family:var(--mono);font-size:9px;color:var(--text3)">Click for frame detail</span></div><div class="card-b"><div class="timeline" id="${uid}"></div></div></div><div id="fd-${uid}"></div>`;
+  document.getElementById(tId).innerHTML=h;
+  const track=document.getElementById(uid);
+  (r.frames||[]).forEach(f=>{
+    const seg=document.createElement('div');seg.className='t-seg '+(f.threat||'clear').toLowerCase();seg.title=f.timestamp+'s · '+f.threat;
+    seg.onclick=()=>{
+      const all=[...(f.objects||[]),...(f.faces||[]).map(fc=>({label:'Face:'+(fc.emotion||''),threat:fc.threat,confidence:fc.confidence}))];
+      let dh=`<div class="card"><div class="card-h"><span class="card-t">@ ${f.timestamp}s — ${f.threat}</span></div><div class="card-b"><div class="obj-grid">`;
+      if(!all.length) dh+='<span style="font-size:11px;color:var(--text3)">No objects.</span>';
+      all.forEach((o,i)=>{const ot=(o.threat||'safe').toLowerCase();dh+=`<div class="obj-card ${ot}" style="animation-delay:${i*0.04}s"><div class="obj-n">${o.label}</div><div class="obj-tags"><span class="tag tag-${ot}">${o.threat}</span><span class="tag">${Math.round((o.confidence||0)*100)}%</span></div></div>`;});
+      dh+=`</div></div></div>`;document.getElementById('fd-'+uid).innerHTML=dh;
+    };track.appendChild(seg);
+  });
+}
+function demoVideoReport(){const th=['SAFE','SAFE','WARNING','SAFE','DANGER','WARNING','SAFE','CRITICAL','DANGER','SAFE'];return{peakThreat:'CRITICAL',analyzedFrames:th.length,totalFrames:250,fps:25,dangerCount:5,safeCount:12,frames:th.map((t,i)=>({frameIndex:i*25,timestamp:i.toFixed(1),threat:t,objects:['DANGER','CRITICAL'].includes(t)?[{label:'knife',threat:'DANGER',confidence:0.87}]:[{label:'person',threat:'SAFE',confidence:0.91}],faces:[]}))};
+}
+
+// ══ CAMERA ════════════════════════════════════════
+async function startCamera(){
+  try{
+    const r=await fetch(CFG.apiBase+'/api/camera/start');
+    if(!r.ok){alert('No camera found on server');return;}
+    CFG.camActive=true;
+    document.getElementById('cam-placeholder').style.display='none';
+    document.getElementById('cam-wrap').classList.add('active');
+    document.getElementById('cam-start-btn').style.display='none';
+    document.getElementById('cam-stop-btn').style.display='block';
+    document.getElementById('cam-badge').textContent='ON';
+    document.getElementById('cam-badge').className='nav-badge red';
+    CFG.camInterval=setInterval(fetchCameraFrame,300);
+  }catch{alert('Cannot connect to camera API');}
+}
+async function stopCamera(){
+  if(CFG.camInterval){clearInterval(CFG.camInterval);CFG.camInterval=null;}
+  CFG.camActive=false;
+  try{await fetch(CFG.apiBase+'/api/camera/stop');}catch{}
+  document.getElementById('cam-start-btn').style.display='block';
+  document.getElementById('cam-stop-btn').style.display='none';
+  document.getElementById('cam-badge').textContent='OFF';
+  document.getElementById('cam-badge').className='nav-badge green';
+  document.getElementById('cam-info').textContent='Camera stopped';
+  document.getElementById('cam-threat-badge').textContent='STANDBY';
+}
+async function fetchCameraFrame(){
+  try{
+    const h={};if(CFG.token) h['Authorization']='Bearer '+CFG.token;
+    const r=await fetch(CFG.apiBase+'/api/camera/frame',{headers:h,signal:AbortSignal.timeout(3000)});
+    if(!r.ok) return;
+    const blob=await r.blob();
+    const url=URL.createObjectURL(blob);
+    const img=document.getElementById('camera-feed');
+    URL.revokeObjectURL(img.src);img.src=url;
+    const threat=r.headers.get('X-Threat')||'CLEAR';
+    const objects=r.headers.get('X-Objects')||'0';
+    const summary=r.headers.get('X-Summary')||'';
+    const badge=document.getElementById('cam-threat-badge');
+    const cols={SAFE:'var(--safe)',CAUTION:'var(--warn)',WARNING:'var(--warn)',DANGER:'var(--danger)',CRITICAL:'var(--crit)',CLEAR:'var(--blue)'};
+    badge.textContent=threat;badge.style.color=cols[threat]||'var(--blue)';badge.style.background=`rgba(from ${cols[threat]||'#6382FF'} r g b / 0.1)`;
+    document.getElementById('cam-info').textContent=summary||objects+' objects detected';
+    CFG.camFrameCount++;
+    if(CFG.camFrameCount%10===0){const now=Date.now();const fps=Math.round(10000/(now-CFG.camLastTime));CFG.camLastTime=now;document.getElementById('cam-fps').textContent=fps+' FPS';}
+  }catch{}
+}
+
+// ══ HISTORY ═══════════════════════════════════════
+async function loadHistory(){
+  const el=document.getElementById('history-list');
+  el.innerHTML='<div class="empty-s">Loading...</div>';
+  try{
+    const h={};if(CFG.token) h['Authorization']='Bearer '+CFG.token;
+    const r=await fetch(CFG.apiBase+'/api/history?limit=50',{headers:h});
+    if(!r.ok) throw 0;
+    const d=await r.json();
+    if(!d.scans?.length){el.innerHTML='<div class="empty-s">No scans yet</div>';return;}
+    el.innerHTML=d.scans.map(s=>{
+      const tc=(s.threat||'safe').toLowerCase();
+      const dt=new Date(s.createdAt).toLocaleString('en',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
+      return `<div class="history-item ${tc}">
+        <div class="hi-threat">${s.threat}</div>
+        <div class="hi-type">${s.scanType}</div>
+        <div class="hi-summary">${s.summary||'No summary'}</div>
+        <div class="hi-time">${dt}</div>
+        <button class="btn btn-g hi-pdf" onclick="downloadPDF('${s.id}')">↓ PDF</button>
+      </div>`;
+    }).join('');
+  }catch{el.innerHTML='<div class="empty-s">Cannot load history — check connection</div>';}
+}
+
+async function downloadPDF(scanId){
+  try{
+    const h={};if(CFG.token) h['Authorization']='Bearer '+CFG.token;
+    const r=await fetch(CFG.apiBase+'/api/report/'+scanId,{headers:h});
+    if(!r.ok){alert('Cannot generate PDF — scan not found');return;}
+    const blob=await r.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=`AURA_Report_${scanId.substring(0,8)}.pdf`;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  }catch{alert('Error generating PDF');}
+}
+
+// ══ LOG ═══════════════════════════════════════════
+function addLog(type,threat,preview){
+  const log=document.getElementById('log-scroll');
+  const empty=log.querySelector('.empty-s');if(empty)empty.remove();
+  const tc=(threat||'safe').toLowerCase();
+  const e=document.createElement('div');e.className='log-e '+tc;
+  e.innerHTML=`<div class="le-row"><div class="le-th">${threat}</div><div class="le-ti">${new Date().toLocaleTimeString('en',{hour12:false})}</div></div><div class="le-ty">${type}</div><div class="le-pv">${(preview||'').substring(0,50)}</div>`;
+  log.insertBefore(e,log.firstChild);
+  document.getElementById('log-count').textContent=log.querySelectorAll('.log-e').length+' entries';
+}
+
+function updateRecent(type,threat,desc){
+  const el=document.getElementById('d-recent');
+  const empty=el.querySelector('.empty-s');if(empty)empty.remove();
+  const tc=(threat||'safe').toLowerCase();
+  const e=document.createElement('div');e.className='log-e '+tc;e.style.marginBottom='6px';
+  e.innerHTML=`<div class="le-row"><div class="le-th">${threat}</div><div class="le-ti">${type} · ${new Date().toLocaleTimeString('en',{hour12:false})}</div></div><div class="le-pv">${(desc||'').substring(0,55)}</div>`;
+  el.insertBefore(e,el.firstChild);
+  if(el.children.length>6) el.removeChild(el.lastChild);
+}
+
+// ══ SETTINGS ═════════════════════════════════════
+document.addEventListener('change',e=>{if(e.target.id==='s-api') CFG.apiBase=e.target.value.trim();});
+</script>
+</body>
+</html>
